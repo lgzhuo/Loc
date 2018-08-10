@@ -1,0 +1,17 @@
+<resources>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- drawer nav -->
+    <string name="nav_settings">设置</string>
+
+    <!-- preference -->
+    <string name="category_alarm">Alarm</string>
+    <string name="loc_alarm_enabled">开启Alarm唤醒</string>
+    <string name="loc_alarm_delay">Alarm 间隔（分钟）</string>
+</resources>

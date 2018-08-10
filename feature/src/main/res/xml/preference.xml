@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:key="loc_alarm"
+        android:title="@string/category_alarm" >
+
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="loc_alarm_enabled"
+            android:title="@string/loc_alarm_enabled" />
+
+        <android.support.v7.preference.SeekBarPreference
+            android:key="loc_alarm_delay"
+            android:title="@string/loc_alarm_delay"
+            android:defaultValue="5"
+            android:max="30"
+            app:min="1"
+            app:showSeekBarValue="true"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
