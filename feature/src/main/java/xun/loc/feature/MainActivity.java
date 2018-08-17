@@ -1,47 +1,105 @@
 package xun.loc.feature;
 
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
+import android.arch.paging.PagedList;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.content.FileProvider;
-import android.view.View;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import com.amap.api.maps.TextureMapView;
 import com.amap.api.maps.model.MyLocationStyle;
+import com.amap.api.maps.model.Polyline;
+
+import java.util.List;
+
+import xun.loc.feature.db.entrity.Location;
+import xun.loc.feature.db.entrity.Track;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
 
     private TextureMapView mapView;
+    private RecyclerView recyclerView;
+    private MainActivityModel model;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mapView = (TextureMapView) findViewById(R.id.map);
+        mapView = findViewById(R.id.map);
         mapView.onCreate(savedInstanceState);
         mapView.getMap().setMyLocationEnabled(true);
         mapView.getMap().setMyLocationStyle(
                 new MyLocationStyle()
                         .interval(2000)
-                        .myLocationType(MyLocationStyle.LOCATION_TYPE_FOLLOW)
+                        .myLocationType(MyLocationStyle.LOCATION_TYPE_SHOW)
         );
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        final FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(this);
+
+        recyclerView = findViewById(R.id.recycler_view);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
+        recyclerView.setLayoutManager(layoutManager);
+        final TrackListPagedAdapter adapter = new TrackListPagedAdapter();
+        recyclerView.setAdapter(adapter);
+
+
+        Drawable dividerDrawable = ActivityCompat.getDrawable(this, R.drawable.track_list_divider);
+        if (dividerDrawable != null) {
+            DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(this, layoutManager.getOrientation());
+            dividerItemDecoration.setDrawable(dividerDrawable);
+            recyclerView.addItemDecoration(dividerItemDecoration);
+        }
+
+        model = ViewModelProviders.of(this).get(MainActivityModel.class);
+        model.trackStarted.observe(this, new Observer<Boolean>() {
+            @Override
+            public void onChanged(@Nullable Boolean trackStarted) {
+                fab.setEnabled(trackStarted != null);
+                if (trackStarted == null) {
+                    fab.setImageDrawable(null);
+                } else if (trackStarted) {
+                    fab.setImageResource(R.drawable.ic_block);
+                } else {
+                    fab.setImageResource(R.drawable.ic_track_changes);
+                }
+            }
+        });
+        model.allTracks.observe(this, new Observer<PagedList<Track>>() {
+            @Override
+            public void onChanged(@Nullable PagedList<Track> tracks) {
+                adapter.submitList(tracks);
+            }
+        });
+
+        model.locations.observe(this, new Observer<List<Location>>() {
+            @Override
+            public void onChanged(@Nullable List<Location> locations) {
+
+            }
+        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -52,7 +110,8 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-
+        /* restart track service to avoid error state after been killed */
+        TrackService.restart(this);
     }
 
     @Override
@@ -129,8 +188,26 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()) {
+        if (v.getId() == R.id.fab) {
+            Boolean trackStarted = model.trackStarted.getValue();
+            if (trackStarted == null) {
+            } else if (trackStarted) {
+                TrackService.stop(this, null);
+            } else {
+                TrackService.start(this);
+            }
+        }
+    }
 
+    /* track polyline */
+    private void handleLocations(@Nullable List<Location> locations) {
+        if (locations == null) {
+
+        } else {
+            Polyline polyline = null;
+            for (Location location : locations) {
+
+            }
         }
     }
 }

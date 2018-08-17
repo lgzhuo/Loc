@@ -3,6 +3,14 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <android.support.v7.preference.SeekBarPreference
+        android:key="loc_interval"
+        android:title="@string/loc_interval"
+        android:defaultValue="10"
+        android:max="600"
+        app:min="1"
+        app:showSeekBarValue="true"/>
+
     <PreferenceCategory
         android:key="loc_alarm"
         android:title="@string/category_alarm" >
@@ -13,8 +21,8 @@
             android:title="@string/loc_alarm_enabled" />
 
         <android.support.v7.preference.SeekBarPreference
-            android:key="loc_alarm_delay"
-            android:title="@string/loc_alarm_delay"
+            android:key="loc_alarm_interval"
+            android:title="@string/loc_alarm_interval"
             android:defaultValue="5"
             android:max="30"
             app:min="1"

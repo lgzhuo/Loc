@@ -4,14 +4,19 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.HandlerThread;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.orhanobut.logger.AndroidLogAdapter;
+import com.orhanobut.logger.CsvFormatStrategy;
 import com.orhanobut.logger.DiskLogAdapter;
 import com.orhanobut.logger.LogAdapter;
 import com.orhanobut.logger.Logger;
 
+import java.io.File;
+
 import xun.loc.feature.Constants.APP_STATE;
+import xun.loc.feature.log.CustomDiskLogStrategy;
 
 public class LocApplication extends Application {
 
@@ -69,9 +74,17 @@ public class LocApplication extends Application {
         LogAdapter logcatAdapter = new AndroidLogAdapter();
         Logger.addLogAdapter(logcatAdapter);
 
-        LogAdapter fileAdapter = new DiskLogAdapter();
-        Logger.addLogAdapter(fileAdapter);
+        String dirPath = null;
+        File dir = getExternalFilesDir(null);
+        if (dir != null) {
+            dirPath = dir.getAbsolutePath() + File.separatorChar + "Log";
+        }
 
+        HandlerThread ht = new HandlerThread("FileLogger");
+        ht.start();
+        CustomDiskLogStrategy logStrategy = new CustomDiskLogStrategy(ht.getLooper(), dirPath, null, null);
+        LogAdapter fileAdapter = new DiskLogAdapter(CsvFormatStrategy.newBuilder().logStrategy(logStrategy).build());
+        Logger.addLogAdapter(fileAdapter);
     }
 
     public int getAppState() {

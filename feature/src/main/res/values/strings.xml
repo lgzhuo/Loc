@@ -11,7 +11,9 @@
     <string name="nav_settings">设置</string>
 
     <!-- preference -->
+    <string name="loc_interval">定位间隔（秒）</string>
+
     <string name="category_alarm">Alarm</string>
     <string name="loc_alarm_enabled">开启Alarm唤醒</string>
-    <string name="loc_alarm_delay">Alarm 间隔（分钟）</string>
+    <string name="loc_alarm_interval">Alarm 间隔（分钟）</string>
 </resources>

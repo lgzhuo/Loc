@@ -56,8 +56,7 @@
         </activity>
 
         <activity
-            android:name=".SettingsActivity"
-            android:label="@string/nav_settings"/>
+            android:name=".SettingsActivity"/>
     </application>
 
 </manifest>
