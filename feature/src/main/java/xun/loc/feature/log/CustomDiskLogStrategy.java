@@ -56,11 +56,11 @@ public class CustomDiskLogStrategy extends Handler implements LogStrategy {
         obtainMessage(priority, new String[]{tag, message}).sendToTarget();
     }
 
-    File getLogFile() {
+    private File getLogFile() {
         int count = 0;
         File logFile;
         do {
-            logFile = new File(dirPath + File.separatorChar + String.format("%s_%s.csv", this.filePrefix, count));
+            logFile = new File(dirPath + File.separatorChar + String.format("%s_%s.csv", this.filePrefix, count++));
         } while (logFile.isFile() && logFile.length() >= maxSize);
         return logFile;
     }

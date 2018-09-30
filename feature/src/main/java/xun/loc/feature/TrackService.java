@@ -9,7 +9,6 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Handler;
@@ -22,6 +21,9 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 
 import com.amap.api.location.AMapLocation;
@@ -31,11 +33,14 @@ import com.amap.api.location.AMapLocationListener;
 import com.orhanobut.logger.Logger;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import xun.loc.feature.db.AppDataBase;
 import xun.loc.feature.db.dao.TrackDao;
-import xun.loc.feature.db.entrity.Location;
-import xun.loc.feature.db.entrity.Track;
+import xun.loc.feature.db.entity.Location;
+import xun.loc.feature.db.entity.Track;
 
 public class TrackService extends Service {
 
@@ -66,7 +71,6 @@ public class TrackService extends Service {
         }
     };
     private boolean isForeground = false;
-    private boolean isChannelCreated = false;
     private AMapLocationListener locListener;
     private AppDataBase db;
     private Looper handlerLooper;
@@ -116,10 +120,11 @@ public class TrackService extends Service {
     public void onCreate() {
         super.onCreate();
         /* init app state */
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Constants.APP_STATE.BROADCAST_ACTION);
-        registerReceiver(receiver, filter);
-        onAppState(((LocApplication) getApplication()).getAppState());
+//        IntentFilter filter = new IntentFilter();
+//        filter.addAction(Constants.APP_STATE.BROADCAST_ACTION);
+//        registerReceiver(receiver, filter);
+//        onAppState(((LocApplication) getApplication()).getAppState());
+        startForeground();
 
         /* init Loc message handler */
         HandlerThread thread = new HandlerThread("track-service");
@@ -128,6 +133,14 @@ public class TrackService extends Service {
         handlerLooper = thread.getLooper();
         handler = new Handler(handlerLooper, handlerCallback);
         db = AppDataBase.getInstance(this);
+
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(0, TimeUnit.SECONDS)
+                .build();
+
+        Request.Builder builder = new Request.Builder().url("ws://192");
 
         Logger.i("track service created");
     }
@@ -139,7 +152,7 @@ public class TrackService extends Service {
             locClient.onDestroy();
             locClient = null;
         }
-        unregisterReceiver(receiver);
+//        unregisterReceiver(receiver);
         if (Build.VERSION.SDK_INT > 18) {
             handlerLooper.quitSafely();
         } else {
@@ -190,46 +203,22 @@ public class TrackService extends Service {
                 break;
             case Constants.APP_STATE.BACKGROUND:
                 if (!isForeground) {
-                    startForeground(10086, buildNotification());
+                    startForeground();
                     isForeground = true;
                 }
                 break;
         }
     }
 
-    private Notification buildNotification() {
-        Notification.Builder builder;
-        Notification notification;
-        if (android.os.Build.VERSION.SDK_INT >= 26) {
-            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (isChannelCreated) {
-                NotificationChannel notificationChannel = new NotificationChannel(TRACK_CHANNEL_ID,
-                        "轨迹获取", NotificationManager.IMPORTANCE_DEFAULT);
-                try {
-                    notificationManager.createNotificationChannel(notificationChannel);
-                    isChannelCreated = true;
-                } catch (Exception ignore) {
-                }
-            }
-            if (isChannelCreated) {
-                builder = new Notification.Builder(this, TRACK_CHANNEL_ID);
-            } else {
-                builder = new Notification.Builder(this);
-            }
-        } else {
-            builder = new Notification.Builder(this);
-        }
-        builder.setSmallIcon(xun.loc.R.mipmap.ic_launcher)
-                .setContentTitle(getString(xun.loc.R.string.app_name))
+    private void startForeground() {
+        Notification notification = new NotificationCompat.Builder(this, TRACK_CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(getString(R.string.app_name))
                 .setContentText("正在获取位置")
-                .setWhen(System.currentTimeMillis());
-
-        if (android.os.Build.VERSION.SDK_INT >= 16) {
-            notification = builder.build();
-        } else {
-            return builder.getNotification();
-        }
-        return notification;
+                .setWhen(System.currentTimeMillis())
+                .setContentIntent(PendingIntent.getActivity(this, 117, new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT))
+                .build();
+        startForeground(49729, notification);
     }
 
     private void setupTrack(@NonNull Track track) {
@@ -253,7 +242,7 @@ public class TrackService extends Service {
 
         /* setup alarm */
         if (track.isAlarmEnabled()) {
-            int alarmInterval = track.getAlarmInterval() * 60000;
+            long alarmInterval = track.getAlarmInterval();
             AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
             if (am != null) {
                 am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
@@ -273,6 +262,7 @@ public class TrackService extends Service {
             if (am != null) {
                 am.cancel(alarmIntent);
             }
+            alarmIntent = null;
         }
         cleanWakeLock();
     }
@@ -294,7 +284,7 @@ public class TrackService extends Service {
     private void handleTrackStop(int flags, int startId, @Nullable Integer trackId) {
         Track targetTrack;
         if (trackId != null) {
-            if (currentTrack != null && currentTrack.getId().intValue() == trackId.intValue()) {
+            if (currentTrack != null && currentTrack.getId().intValue() == trackId) {
                 targetTrack = currentTrack;
             } else {
                 targetTrack = db.trackDao().findById(trackId);
@@ -323,8 +313,8 @@ public class TrackService extends Service {
         /* build track on preference */
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         nextTrack.setAlarmEnabled(preferences.getBoolean("loc_alarm_enabled", true));
-        nextTrack.setAlarmInterval(preferences.getInt("loc_alarm_interval", 5));
-        nextTrack.setInterval(preferences.getLong("loc_interval", 10));
+        nextTrack.setAlarmInterval(preferences.getInt("loc_alarm_interval", 5) * 60000L);
+        nextTrack.setInterval(preferences.getInt("loc_interval", 10) * 1000L);
 
         final TrackDao trackDao = db.trackDao();
         final Track preTrack = currentTrack;
@@ -358,20 +348,25 @@ public class TrackService extends Service {
     }
 
     private void handleLocation(AMapLocation al) {
-        if (!isTracking()) return;
-        Location location = new Location(
-                currentTrack.getId(),
-                al.getLatitude(),
-                al.getLongitude(),
-                al.getTime(),
-                al.getSpeed(),
-                al.getBearing(),
-                locationOriginal,
-                wakeWating
-        );
-        locationOriginal = false;
-        db.locationDao().insert(location);
-        Logger.i("loc->%s", location.toString());
+        if (isTracking() && al != null) {
+            if (al.getErrorCode() != AMapLocation.LOCATION_SUCCESS) {
+                Logger.e("location error code:%d info:%s %s", al.getErrorCode(), al.getErrorInfo(), al.getLocationDetail());
+            } else {
+                Location location = new Location(
+                        currentTrack.getId(),
+                        al.getLatitude(),
+                        al.getLongitude(),
+                        al.getTime(),
+                        al.getSpeed(),
+                        al.getBearing(),
+                        locationOriginal,
+                        wakeWating
+                );
+                locationOriginal = false;
+                db.locationDao().insert(location);
+                Logger.i("loc->%s", location.toString());
+            }
+        }
         cleanWakeLock();
     }
 
@@ -394,7 +389,11 @@ public class TrackService extends Service {
     public static void start(Context context) {
         Intent it = new Intent(context, TrackService.class);
         it.setAction(ACTION_START);
-        context.startService(it);
+        if (Build.VERSION.SDK_INT >= 26) {
+            context.startForegroundService(it);
+        } else {
+            context.startService(it);
+        }
     }
 
     public static void stop(Context context, @Nullable Integer trackId) {
@@ -409,7 +408,11 @@ public class TrackService extends Service {
     public static void restart(Context context) {
         Intent it = new Intent(context, TrackService.class);
         it.setAction(ACTION_CONTINUE);
-        context.startService(it);
+        if (Build.VERSION.SDK_INT >= 26) {
+            context.startForegroundService(it);
+        } else {
+            context.startService(it);
+        }
     }
 
     public static void wake(Context context) {
@@ -417,7 +420,11 @@ public class TrackService extends Service {
 
         Intent it = new Intent(context, TrackService.class);
         it.setAction(ACTION_WAKE);
-        context.startService(it);
+        if (Build.VERSION.SDK_INT >= 26) {
+            context.startForegroundService(it);
+        } else {
+            context.startService(it);
+        }
     }
 
     private static void acquireWakeLockNow(Context context) {
@@ -429,6 +436,18 @@ public class TrackService extends Service {
                     TrackService.class.getSimpleName());
             wakeLock.setReferenceCounted(false);
             wakeLock.acquire(30000);
+        }
+    }
+
+    public static void setupNotificationChannel(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(TRACK_CHANNEL_ID, "轨迹获取", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("轨迹记录服务的通知");
+            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+                Logger.d("notification channel created");
+            }
         }
     }
 

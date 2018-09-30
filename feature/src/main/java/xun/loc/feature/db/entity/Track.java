@@ -1,4 +1,4 @@
-package xun.loc.feature.db.entrity;
+package xun.loc.feature.db.entity;
 
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
@@ -11,7 +11,7 @@ import xun.loc.feature.Utils;
 @Entity(tableName = "track")
 public class Track {
     @PrimaryKey(autoGenerate = true)
-    private Integer id;
+    private Long id;
     @ColumnInfo(name = "start_time")
     private Date startTime;
     @ColumnInfo(name = "stop_time")
@@ -22,15 +22,15 @@ public class Track {
     @ColumnInfo(name = "alarm_enabled")
     private boolean alarmEnabled;
     @ColumnInfo(name = "alarm_interval")
-    private int alarmInterval;
+    private long alarmInterval;
 
     private boolean correct;
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -66,11 +66,11 @@ public class Track {
         this.alarmEnabled = alarmEnabled;
     }
 
-    public int getAlarmInterval() {
+    public long getAlarmInterval() {
         return alarmInterval;
     }
 
-    public void setAlarmInterval(int alarmInterval) {
+    public void setAlarmInterval(long alarmInterval) {
         this.alarmInterval = alarmInterval;
     }
 

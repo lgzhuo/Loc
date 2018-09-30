@@ -1,9 +1,12 @@
-package xun.loc.feature.db.entrity;
+package xun.loc.feature.db.entity;
 
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;
 import android.arch.persistence.room.PrimaryKey;
+import android.os.SystemClock;
+
+import java.util.Date;
 
 @Entity(tableName = "location",
         foreignKeys = {
@@ -15,12 +18,14 @@ import android.arch.persistence.room.PrimaryKey;
         })
 public class Location {
     @PrimaryKey(autoGenerate = true)
-    private int id;
+    private Long id;
     @ColumnInfo(name = "track_id", index = true)
-    private int trackId;
+    private long trackId;
     private double latitude;
     private double longitude;
     private long time;
+    @ColumnInfo(name = "create_time")
+    private long createTime;
     private float speed;
     private float bearing;
 
@@ -28,7 +33,7 @@ public class Location {
     @ColumnInfo(name = "alarm_wake")
     private boolean alarmWake;
 
-    public Location(int trackId, double latitude, double longitude, long time, float speed, float bearing, boolean original, boolean alarmWake) {
+    public Location(long trackId, double latitude, double longitude, long time, float speed, float bearing, boolean original, boolean alarmWake) {
         this.trackId = trackId;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -37,21 +42,22 @@ public class Location {
         this.bearing = bearing;
         this.original = original;
         this.alarmWake = alarmWake;
+        this.createTime = System.currentTimeMillis();
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public int getTrackId() {
+    public long getTrackId() {
         return trackId;
     }
 
-    public void setTrackId(int trackId) {
+    public void setTrackId(long trackId) {
         this.trackId = trackId;
     }
 
@@ -77,6 +83,14 @@ public class Location {
 
     public void setTime(long time) {
         this.time = time;
+    }
+
+    public long getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(long createTime) {
+        this.createTime = createTime;
     }
 
     public float getSpeed() {
@@ -111,6 +125,14 @@ public class Location {
         this.alarmWake = alarmWake;
     }
 
+    public Date getDate(){
+        return new Date(this.time);
+    }
+
+    public Date getCreateDate(){
+        return new Date(this.createTime);
+    }
+
     @Override
     public String toString() {
         return "Location{" +
@@ -119,6 +141,7 @@ public class Location {
                 ", latitude=" + latitude +
                 ", longitude=" + longitude +
                 ", time=" + time +
+                ", createTime=" + createTime +
                 ", speed=" + speed +
                 ", bearing=" + bearing +
                 ", original=" + original +

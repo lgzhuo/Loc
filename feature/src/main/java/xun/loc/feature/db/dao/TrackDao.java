@@ -11,7 +11,7 @@ import android.arch.persistence.room.Update;
 
 import java.util.List;
 
-import xun.loc.feature.db.entrity.Track;
+import xun.loc.feature.db.entity.Track;
 
 @Dao
 public abstract class TrackDao {
@@ -42,6 +42,9 @@ public abstract class TrackDao {
 
     @Query("SELECT * from track where id = :trackId")
     public abstract Track findById(int trackId);
+
+    @Query("SELECT id from track")
+    public abstract LiveData<List<Long>> allIds();
 
     public void insertAndAssign(final Track track) {
         Runnable runnable = new Runnable() {

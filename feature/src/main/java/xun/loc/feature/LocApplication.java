@@ -5,13 +5,16 @@ import android.app.Application;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.HandlerThread;
+import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.orhanobut.logger.AndroidLogAdapter;
 import com.orhanobut.logger.CsvFormatStrategy;
 import com.orhanobut.logger.DiskLogAdapter;
 import com.orhanobut.logger.LogAdapter;
 import com.orhanobut.logger.Logger;
+import com.orhanobut.logger.PrettyFormatStrategy;
 
 import java.io.File;
 
@@ -71,7 +74,11 @@ public class LocApplication extends Application {
             }
         });
 
-        LogAdapter logcatAdapter = new AndroidLogAdapter();
+        LogAdapter logcatAdapter = new AndroidLogAdapter(PrettyFormatStrategy.newBuilder()
+                .showThreadInfo(false)
+                .methodCount(0)
+                .methodOffset(7)
+                .build());
         Logger.addLogAdapter(logcatAdapter);
 
         String dirPath = null;
@@ -83,8 +90,15 @@ public class LocApplication extends Application {
         HandlerThread ht = new HandlerThread("FileLogger");
         ht.start();
         CustomDiskLogStrategy logStrategy = new CustomDiskLogStrategy(ht.getLooper(), dirPath, null, null);
-        LogAdapter fileAdapter = new DiskLogAdapter(CsvFormatStrategy.newBuilder().logStrategy(logStrategy).build());
+        LogAdapter fileAdapter = new DiskLogAdapter(CsvFormatStrategy.newBuilder().logStrategy(logStrategy).build()) {
+            @Override
+            public boolean isLoggable(int priority, @Nullable String tag) {
+                return priority > Log.DEBUG;
+            }
+        };
         Logger.addLogAdapter(fileAdapter);
+
+        TrackService.setupNotificationChannel(this);
     }
 
     public int getAppState() {

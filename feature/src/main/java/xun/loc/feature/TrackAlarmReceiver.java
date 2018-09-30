@@ -4,9 +4,10 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.support.v4.content.WakefulBroadcastReceiver;
 import android.text.TextUtils;
 
-public class TrackAlarmReceiver extends BroadcastReceiver {
+public class TrackAlarmReceiver extends WakefulBroadcastReceiver {
 
     private static final String ACTION_WEAK = "xun.loc.feature.weak";
 

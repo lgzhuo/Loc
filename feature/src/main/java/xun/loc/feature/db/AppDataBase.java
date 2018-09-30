@@ -9,8 +9,8 @@ import android.content.Context;
 import xun.loc.feature.db.converter.DateConverter;
 import xun.loc.feature.db.dao.LocationDao;
 import xun.loc.feature.db.dao.TrackDao;
-import xun.loc.feature.db.entrity.Location;
-import xun.loc.feature.db.entrity.Track;
+import xun.loc.feature.db.entity.Location;
+import xun.loc.feature.db.entity.Track;
 
 @Database(entities = {Location.class, Track.class}, version = 1, exportSchema = false)
 @TypeConverters({DateConverter.class})
